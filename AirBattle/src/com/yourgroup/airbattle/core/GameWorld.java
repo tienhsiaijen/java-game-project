@@ -5,6 +5,9 @@ import com.yourgroup.airbattle.objects.Enemy;
 import com.yourgroup.airbattle.objects.GameObject;
 import com.yourgroup.airbattle.objects.Item;
 import com.yourgroup.airbattle.objects.Player;
+import com.yourgroup.airbattle.objects.enemyType1;
+import com.yourgroup.airbattle.objects.enemyType2;
+import com.yourgroup.airbattle.objects.enemyType3;
 import com.yourgroup.airbattle.util.Collision;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
@@ -12,6 +15,7 @@ import javafx.scene.layout.Pane;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 /**
  * GameWorld manages all active objects, update loop, collision checks and cleanup.
@@ -22,8 +26,16 @@ public class GameWorld {
     private final List<GameObject> objects = new ArrayList<>();
     private final List<GameObject> pendingAdd = new ArrayList<>();
 
-    // 子弹图片只加载一次
+    private final Random rng = new Random();
+
+    // 资源：只加载一次
     private final Image bulletSprite = new Image("/img/Bullet.png");
+    private final Image enemySprite1 = new Image("/img/enemy.png");
+    private final Image enemySprite2 = new Image("/img/enemy2.png");
+    private final Image enemySprite3 = new Image("/img/enemyFast.png");
+
+    // 刷怪计时
+    private double enemySpawnTimer = 0.0;
 
     public GameWorld(Pane playfield) {
         this.playfield = playfield;
@@ -36,6 +48,9 @@ public class GameWorld {
 
     /** Update all objects for a single frame. */
     public void update(double dt) {
+        // 0) spawn enemies
+        spawnEnemies(dt);
+
         // 1) apply pending adds
         if (!pendingAdd.isEmpty()) {
             for (GameObject o : pendingAdd) {
@@ -52,15 +67,15 @@ public class GameWorld {
             o.update(dt);
 
             if (o instanceof Player player) {
-                // 接入开火（按空格）
-                if (player != null && player.canFire() && playerFirePressed(player)) {
+                // 空格开火：Player 已经有 isFiringPressed()
+                if (player.canFire() && player.isFiringPressed()) {
                     Bullet b = player.fire(bulletSprite);
                     if (b != null) spawn(b);
                 }
 
                 player.clampTo(
-                    playfield.getLayoutBounds().getWidth(),
-                    playfield.getLayoutBounds().getHeight()
+                    getWorldWidth(),
+                    getWorldHeight()
                 );
             }
         }
@@ -77,15 +92,44 @@ public class GameWorld {
         cleanup();
     }
 
-    // 通过类型/输入判断是否开火：避免 GameWorld 直接依赖 InputHandler
-    private boolean playerFirePressed(Player player) {
-        // Player 内部已经持有 InputHandler；这里用最小侵入方式：
-        // 让 Player.update() 不管开火，由 GameWorld 在帧里触发。
-        // 但 Player 没暴露 input，因此直接用 ObjectType 不行。
-        // 解决：把“是否按下空格”的判断留在 Player（最干净）。
-        // 目前你 Player 里没有 isFiringPressed()，所以这里先走最保守方案：
-        // ——让玩家只要能开火就自动开火（你不想这样的话，看下面“下一步”我会让你加一个方法）
-        return true;
+    private void spawnEnemies(double dt) {
+        enemySpawnTimer -= dt;
+
+        if (enemySpawnTimer > 0) return;
+
+        // 下一波刷怪间隔：0.8 ~ 1.2 秒
+        enemySpawnTimer = 0.8 + rng.nextDouble() * 0.4;
+
+        double w = getWorldWidth();
+        // 避免 w 还没布局出来导致 0
+        if (w < 100) w = 900;
+
+        double x = rng.nextDouble() * (w - 40);
+        double y = -60;
+
+        // 概率：70% type1, 25% type3, 5% type2
+        int roll = rng.nextInt(100);
+        GameObject enemy;
+
+        if (roll < 70) {
+            enemy = new enemyType1(x, y, enemySprite1);
+        } else if (roll < 95) {
+            enemy = new enemyType3(x, y, enemySprite3);
+        } else {
+            enemy = new enemyType2(x, y, enemySprite2);
+        }
+
+        spawn(enemy);
+    }
+
+    private double getWorldWidth() {
+        double w = playfield.getLayoutBounds().getWidth();
+        return (w > 0) ? w : playfield.getPrefWidth();
+    }
+
+    private double getWorldHeight() {
+        double h = playfield.getLayoutBounds().getHeight();
+        return (h > 0) ? h : playfield.getPrefHeight();
     }
 
     private void handleCollisions() {
@@ -120,7 +164,7 @@ public class GameWorld {
         // 玩家 vs 敌人
         if (a.getType() == ObjectType.PLAYER && b.getType() == ObjectType.ENEMY) {
             if (a instanceof Player p) p.damage();
-            b.kill(); // 你也可以选择不 kill 敌人
+            b.kill();
             return;
         }
         if (b.getType() == ObjectType.PLAYER && a.getType() == ObjectType.ENEMY) {

@@ -11,6 +11,7 @@ import com.yourgroup.airbattle.ui.StartMenu;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -34,6 +35,8 @@ public class MainApp extends Application {
     private PauseMenu pauseMenu;
     private StartMenu startMenu;
 
+    private ImageView bgView;
+
     @Override
     public void start(Stage stage) {
 
@@ -46,6 +49,9 @@ public class MainApp extends Application {
         AnchorPane.setLeftAnchor(playfield, 0.0);
         AnchorPane.setRightAnchor(playfield, 0.0);
         root.getChildren().add(playfield);
+
+        // 背景：先加到 playfield 最底层
+        setupBackground();
 
         world = new GameWorld(playfield);
 
@@ -103,7 +109,7 @@ public class MainApp extends Application {
         AnchorPane.setLeftAnchor(startMenu, 0.0);
         AnchorPane.setRightAnchor(startMenu, 0.0);
 
-        // ✅ 改为 addEventHandler，避免覆盖 InputHandler
+        // 用 addEventHandler，避免覆盖 InputHandler
         scene.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
             switch (e.getCode()) {
                 case ESCAPE -> {
@@ -130,6 +136,19 @@ public class MainApp extends Application {
         });
     }
 
+    private void setupBackground() {
+        Image bg = new Image("/img/background.png");
+        bgView = new ImageView(bg);
+        bgView.setFitWidth(WIDTH);
+        bgView.setFitHeight(HEIGHT);
+        bgView.setPreserveRatio(false);
+
+        // 清理后重建时要再次 add，所以这里先确保只加一次
+        if (!playfield.getChildren().contains(bgView)) {
+            playfield.getChildren().add(bgView);
+        }
+    }
+
     private void showGameOver(Stage stage) {
         loop.pauseRunning();
 
@@ -139,8 +158,13 @@ public class MainApp extends Application {
             finalScore,
             () -> {
                 root.getChildren().removeIf(n -> n instanceof GameOverMenu);
-                playfield.getChildren().clear();
 
+                // 清场
+                playfield.getChildren().clear();
+                // 先重建背景（必须在最底层）
+                setupBackground();
+
+                // 重建世界与循环
                 world = new GameWorld(playfield);
 
                 loop = new GameLoop(world) {
@@ -160,7 +184,7 @@ public class MainApp extends Application {
                 );
                 world.spawn(player);
 
-                if (hud != null) root.getChildren().remove(hud); // ✅ 防止 HUD 叠加
+                if (hud != null) root.getChildren().remove(hud);
                 hud = new HUD();
                 root.getChildren().add(hud);
 

@@ -78,7 +78,7 @@ public class MainApp extends Application {
         startMenu = new StartMenu(
             () -> {
                 root.getChildren().remove(startMenu);
-                initNewGame(stage); // unified game init
+                initNewGame(stage);
             },
             stage::close
         );
@@ -112,16 +112,18 @@ public class MainApp extends Application {
 
         // Reset world and loop
         if (loop != null) {
-            loop.pauseRunning(); // stop timer (your GameLoop now stops in pauseRunning)
+            loop.pauseRunning();
         }
         world = new GameWorld(playfield);
         loop = createLoop(stage);
 
-        // Spawn player
+        // Spawn player (Player now owns firing and uses a spawn callback)
         player = new Player(
             430, 480,
             new Image("/img/player.png"),
-            input
+            input,
+            world.getBulletSprite(),
+            world::spawn
         );
         world.spawn(player);
 

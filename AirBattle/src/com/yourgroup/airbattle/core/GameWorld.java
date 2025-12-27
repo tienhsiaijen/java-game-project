@@ -1,13 +1,12 @@
 package com.yourgroup.airbattle.core;
 
-import com.yourgroup.airbattle.objects.Bullet;
 import com.yourgroup.airbattle.objects.Enemy;
-import com.yourgroup.airbattle.objects.GameObject;
-import com.yourgroup.airbattle.objects.Item;
-import com.yourgroup.airbattle.objects.Player;
 import com.yourgroup.airbattle.objects.EnemyType1;
 import com.yourgroup.airbattle.objects.EnemyType2;
 import com.yourgroup.airbattle.objects.EnemyType3;
+import com.yourgroup.airbattle.objects.GameObject;
+import com.yourgroup.airbattle.objects.Item;
+import com.yourgroup.airbattle.objects.Player;
 import com.yourgroup.airbattle.util.Collision;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
@@ -25,20 +24,23 @@ public class GameWorld {
 
     private final Random rng = new Random();
 
-    // Resources: load once
+    // Resources: load once (used to pass into Player from MainApp)
     private final Image bulletSprite = new Image("/img/Bullet.png");
     private final Image enemySprite1 = new Image("/img/enemy.png");
     private final Image enemySprite2 = new Image("/img/enemy2.png");
     private final Image enemySprite3 = new Image("/img/enemyFast.png");
 
-    // Spawn timer
     private double enemySpawnTimer = 0.0;
 
-    // Score
     private int score = 0;
 
     public GameWorld(Pane playfield) {
         this.playfield = playfield;
+    }
+
+    /** Expose bullet sprite so MainApp can build Player cleanly. */
+    public Image getBulletSprite() {
+        return bulletSprite;
     }
 
     public int getScore() {
@@ -54,10 +56,9 @@ public class GameWorld {
     }
 
     public void update(double dt) {
-        // 0) spawn enemies
         spawnEnemies(dt);
 
-        // 1) apply pending adds
+        // Apply pending adds
         if (!pendingAdd.isEmpty()) {
             for (GameObject o : pendingAdd) {
                 objects.add(o);
@@ -66,32 +67,24 @@ public class GameWorld {
             pendingAdd.clear();
         }
 
-        // 2) update logic
+        // Update objects (no special "player fire" logic here anymore)
         for (GameObject o : objects) {
             if (!o.isAlive()) continue;
 
             o.update(dt);
 
-            if (o instanceof Player player) {
-                // Fire bullet if allowed and key is pressed
-                if (player.canFire() && player.isFiringPressed()) {
-                    Bullet b = player.fire(bulletSprite);
-                    if (b != null) spawn(b);
-                }
-
-                player.clampTo(getWorldWidth(), getWorldHeight());
+            // Keep player inside bounds (world is the owner of the playfield size)
+            if (o instanceof Player p) {
+                p.clampTo(getWorldWidth(), getWorldHeight());
             }
         }
 
-        // 3) collision
         handleCollisions();
 
-        // 4) render
         for (GameObject o : objects) {
             if (o.isAlive()) o.render();
         }
 
-        // 5) cleanup
         cleanup();
     }
 
@@ -99,7 +92,6 @@ public class GameWorld {
         enemySpawnTimer -= dt;
         if (enemySpawnTimer > 0) return;
 
-        // spawn every 0.8 ~ 1.2 sec
         enemySpawnTimer = 0.8 + rng.nextDouble() * 0.4;
 
         double w = getWorldWidth();
@@ -132,11 +124,7 @@ public class GameWorld {
         return (h > 0) ? h : playfield.getPrefHeight();
     }
 
-    /**
-     * Collision handler with "early-out" rules:
-     * - If a bullet is killed by a collision, it should not hit anything else in the same frame.
-     * - If an object is killed, skip further checks involving it.
-     */
+    // Same collision fix you already applied: bullet can't multi-hit in one frame
     private void handleCollisions() {
         for (int i = 0; i < objects.size(); i++) {
             GameObject a = objects.get(i);
@@ -146,16 +134,10 @@ public class GameWorld {
                 GameObject b = objects.get(j);
                 if (!b.isAlive()) continue;
 
-                // If 'a' was killed by a previous collision in this inner loop,
-                // it must not collide with any more objects this frame.
                 if (!a.isAlive()) break;
 
                 if (Collision.aabb(a, b)) {
                     onCollision(a, b);
-
-                    // If either side is killed by this collision, we can avoid extra work.
-                    // - If 'a' is dead, it can't collide with anything else -> break inner loop.
-                    // - If only 'b' is dead, keep scanning; 'a' might collide with others (e.g., player).
                     if (!a.isAlive()) break;
                 }
             }
@@ -163,16 +145,16 @@ public class GameWorld {
     }
 
     private int scoreForEnemy(Enemy e) {
-        if (e instanceof EnemyType2) return 1000; // boss
-        if (e instanceof EnemyType3) return 150;  // fast
-        if (e instanceof EnemyType1) return 100;  // normal
+        if (e instanceof EnemyType2) return 1000;
+        if (e instanceof EnemyType3) return 150;
+        if (e instanceof EnemyType1) return 100;
         return 100;
     }
 
     private void onCollision(GameObject a, GameObject b) {
         // Bullet (player) vs Enemy
         if (a.getType() == ObjectType.BULLET_PLAYER && b.getType() == ObjectType.ENEMY) {
-            a.kill(); // bullet disappears on hit
+            a.kill();
             if (b instanceof Enemy e) {
                 e.damage(1);
                 if (!e.isAlive()) addScore(scoreForEnemy(e));

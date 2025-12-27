@@ -22,6 +22,7 @@ public class MainApp extends Application {
     private static final double HEIGHT = 600;
 
     private boolean paused = false;
+    private boolean gameOverShown = false;
 
     private AnchorPane root;
     private AnchorPane playfield;
@@ -50,7 +51,6 @@ public class MainApp extends Application {
         AnchorPane.setRightAnchor(playfield, 0.0);
         root.getChildren().add(playfield);
 
-        // 背景：先加到 playfield 最底层
         setupBackground();
 
         world = new GameWorld(playfield);
@@ -59,8 +59,15 @@ public class MainApp extends Application {
             @Override
             public void handle(long now) {
                 super.handle(now);
+
                 if (player != null && hud != null) {
                     hud.setHp(player.getHp());
+                    hud.setScore(world.getScore()); // ===== 分数同步到 HUD =====
+                }
+
+                if (!gameOverShown && player != null && !player.isAlive()) {
+                    gameOverShown = true;
+                    showGameOver(stage);
                 }
             }
         };
@@ -98,6 +105,7 @@ public class MainApp extends Application {
                 hud = new HUD();
                 root.getChildren().add(hud);
 
+                gameOverShown = false;
                 loop.startRunning();
             },
             stage::close
@@ -109,11 +117,10 @@ public class MainApp extends Application {
         AnchorPane.setLeftAnchor(startMenu, 0.0);
         AnchorPane.setRightAnchor(startMenu, 0.0);
 
-        // 用 addEventHandler，避免覆盖 InputHandler
         scene.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
             switch (e.getCode()) {
                 case ESCAPE -> {
-                    if (!paused && loop.isRunning()) {
+                    if (!paused && loop.isRunning() && !gameOverShown) {
                         loop.pauseRunning();
                         root.getChildren().add(pauseMenu);
 
@@ -131,7 +138,7 @@ public class MainApp extends Application {
                         paused = false;
                     }
                 }
-                case G -> showGameOver(stage);
+                default -> { }
             }
         });
     }
@@ -143,7 +150,6 @@ public class MainApp extends Application {
         bgView.setFitHeight(HEIGHT);
         bgView.setPreserveRatio(false);
 
-        // 清理后重建时要再次 add，所以这里先确保只加一次
         if (!playfield.getChildren().contains(bgView)) {
             playfield.getChildren().add(bgView);
         }
@@ -159,20 +165,24 @@ public class MainApp extends Application {
             () -> {
                 root.getChildren().removeIf(n -> n instanceof GameOverMenu);
 
-                // 清场
                 playfield.getChildren().clear();
-                // 先重建背景（必须在最底层）
                 setupBackground();
 
-                // 重建世界与循环
                 world = new GameWorld(playfield);
 
                 loop = new GameLoop(world) {
                     @Override
                     public void handle(long now) {
                         super.handle(now);
+
                         if (player != null && hud != null) {
                             hud.setHp(player.getHp());
+                            hud.setScore(world.getScore());
+                        }
+
+                        if (!gameOverShown && player != null && !player.isAlive()) {
+                            gameOverShown = true;
+                            showGameOver(stage);
                         }
                     }
                 };
@@ -188,6 +198,8 @@ public class MainApp extends Application {
                 hud = new HUD();
                 root.getChildren().add(hud);
 
+                paused = false;
+                gameOverShown = false;
                 loop.startRunning();
             },
             stage::close

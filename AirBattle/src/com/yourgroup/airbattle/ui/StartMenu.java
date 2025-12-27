@@ -9,7 +9,7 @@ public class StartMenu extends VBox {
 
     public StartMenu(Runnable onStart, Runnable onExit) {
         setAlignment(Pos.CENTER);
-        setSpacing(25);
+        setSpacing(18);
         setStyle("""
             -fx-background-color: #0f3460;
             -fx-padding: 40;
@@ -18,16 +18,27 @@ public class StartMenu extends VBox {
         Label title = new Label("AIR BATTLE");
         title.setStyle("-fx-font-size: 56px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-        Label subtitle = new Label("Click to start the game");
+        Label subtitle = new Label("Press Start to begin");
         subtitle.setStyle("-fx-text-fill: lightblue; -fx-font-size: 16px;");
 
-        VBox buttons = new VBox(15,
+        Label tips = new Label(
+            "ENEMY GUIDE:\n" +
+            "• Type 1 (Normal): 1 HP, medium speed, moves in a wavy path.\n" +
+            "• Type 3 (Fast): VERY fast, 1 HP, bounces left-right while diving.\n" +
+            "• Type 2 (Boss): Same speed pattern as Fast, BIG body, many HP.\n\n" +
+            "Controls: Arrow keys / WASD to move, SPACE to fire."
+        );
+        tips.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
+        tips.setMaxWidth(520);
+        tips.setWrapText(true);
+
+        VBox buttons = new VBox(12,
                 createButton("Start Game", "#e74c3c", onStart),
                 createButton("Exit Game", "#7f8c8d", onExit)
         );
         buttons.setAlignment(Pos.CENTER);
 
-        getChildren().addAll(title, subtitle, buttons);
+        getChildren().addAll(title, subtitle, tips, buttons);
     }
 
     private Button createButton(String text, String color, Runnable action) {

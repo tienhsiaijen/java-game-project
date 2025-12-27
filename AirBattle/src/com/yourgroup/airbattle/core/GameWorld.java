@@ -17,9 +17,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-/**
- * GameWorld manages all active objects, update loop, collision checks and cleanup.
- */
 public class GameWorld {
 
     private final Pane playfield;
@@ -37,16 +34,25 @@ public class GameWorld {
     // 刷怪计时
     private double enemySpawnTimer = 0.0;
 
+    // ===== 新增：分数 =====
+    private int score = 0;
+
     public GameWorld(Pane playfield) {
         this.playfield = playfield;
     }
 
-    /** Spawn objects safely (avoid concurrent modification). */
+    public int getScore() {
+        return score;
+    }
+
+    private void addScore(int points) {
+        if (points > 0) score += points;
+    }
+
     public void spawn(GameObject obj) {
         pendingAdd.add(obj);
     }
 
-    /** Update all objects for a single frame. */
     public void update(double dt) {
         // 0) spawn enemies
         spawnEnemies(dt);
@@ -67,16 +73,13 @@ public class GameWorld {
             o.update(dt);
 
             if (o instanceof Player player) {
-                // 空格开火：Player 已经有 isFiringPressed()
+                // 空格开火
                 if (player.canFire() && player.isFiringPressed()) {
                     Bullet b = player.fire(bulletSprite);
                     if (b != null) spawn(b);
                 }
 
-                player.clampTo(
-                    getWorldWidth(),
-                    getWorldHeight()
-                );
+                player.clampTo(getWorldWidth(), getWorldHeight());
             }
         }
 
@@ -94,20 +97,17 @@ public class GameWorld {
 
     private void spawnEnemies(double dt) {
         enemySpawnTimer -= dt;
-
         if (enemySpawnTimer > 0) return;
 
-        // 下一波刷怪间隔：0.8 ~ 1.2 秒
+        // 0.8~1.2 秒刷一只
         enemySpawnTimer = 0.8 + rng.nextDouble() * 0.4;
 
         double w = getWorldWidth();
-        // 避免 w 还没布局出来导致 0
         if (w < 100) w = 900;
 
         double x = rng.nextDouble() * (w - 40);
         double y = -60;
 
-        // 概率：70% type1, 25% type3, 5% type2
         int roll = rng.nextInt(100);
         GameObject enemy;
 
@@ -148,16 +148,30 @@ public class GameWorld {
         }
     }
 
+    private int scoreForEnemy(Enemy e) {
+        // 按类型给分（你也可以按 hp 给分）
+        if (e instanceof enemyType2) return 1000; // 大的慢Boss
+        if (e instanceof enemyType3) return 150;  // 快/2血
+        if (e instanceof enemyType1) return 100;  // 普通
+        return 100;
+    }
+
     private void onCollision(GameObject a, GameObject b) {
         // 子弹 vs 敌人
         if (a.getType() == ObjectType.BULLET_PLAYER && b.getType() == ObjectType.ENEMY) {
-            a.kill();
-            if (b instanceof Enemy e) e.damage(1);
+            a.kill(); // 命中就消失（主流规则）
+            if (b instanceof Enemy e) {
+                e.damage(1);
+                if (!e.isAlive()) addScore(scoreForEnemy(e)); // ===== 击杀加分 =====
+            }
             return;
         }
         if (b.getType() == ObjectType.BULLET_PLAYER && a.getType() == ObjectType.ENEMY) {
             b.kill();
-            if (a instanceof Enemy e) e.damage(1);
+            if (a instanceof Enemy e) {
+                e.damage(1);
+                if (!e.isAlive()) addScore(scoreForEnemy(e));
+            }
             return;
         }
 
@@ -196,3 +210,4 @@ public class GameWorld {
         }
     }
 }
+

@@ -17,7 +17,7 @@ public class GameOverMenu extends VBox {
 
         setStyle("-fx-background-color: rgba(0, 0, 0, 0.75);");
 
-        Label title = new Label("MISSION FAILED");
+        Label title = new Label("YOU LOST");
         title.setTextFill(Color.web("#ff3333"));
         title.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 52));
 
@@ -61,3 +61,4 @@ public class GameOverMenu extends VBox {
         return btn;
     }
 }
+

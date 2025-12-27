@@ -2,14 +2,14 @@ package com.yourgroup.airbattle.objects;
 
 import javafx.scene.image.Image;
 
-public class enemyType3 extends Enemy {
+public class EnemyType3 extends Enemy {
 
     private double dir = 1;
 
     private static final double SCREEN_W = 900;
     private static final double SCREEN_H = 600;
 
-    public enemyType3(double x, double y, Image sprite) {
+    public EnemyType3(double x, double y, Image sprite) {
         super(x, y, sprite);
         speed = 240; // 下落更快
         hp = 1;      // 只有1滴血

@@ -2,11 +2,11 @@ package com.yourgroup.airbattle.objects;
 
 import javafx.scene.image.Image;
 
-public class enemyType1 extends Enemy {
+public class EnemyType1 extends Enemy {
 
     private static final double SCREEN_H = 600;
 
-    public enemyType1(double x, double y, Image sprite) {
+    public EnemyType1(double x, double y, Image sprite) {
         super(x, y, sprite);
         speed = 200;
         hp = 1;

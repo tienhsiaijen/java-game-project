@@ -2,14 +2,14 @@ package com.yourgroup.airbattle.objects;
 
 import javafx.scene.image.Image;
 
-public class enemyType2 extends Enemy {
+public class EnemyType2 extends Enemy {
 
     private double dir = 1;
 
     private static final double SCREEN_W = 900;
     private static final double SCREEN_H = 600;
 
-    public enemyType2(double x, double y, Image sprite) {
+    public EnemyType2(double x, double y, Image sprite) {
         super(x, y, sprite);
 
         // 关键：用 setSize 同步 view，否则会出现“视觉没碰到就判定碰到”

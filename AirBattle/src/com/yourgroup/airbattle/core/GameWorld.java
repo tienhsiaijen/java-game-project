@@ -5,9 +5,9 @@ import com.yourgroup.airbattle.objects.Enemy;
 import com.yourgroup.airbattle.objects.GameObject;
 import com.yourgroup.airbattle.objects.Item;
 import com.yourgroup.airbattle.objects.Player;
-import com.yourgroup.airbattle.objects.enemyType1;
-import com.yourgroup.airbattle.objects.enemyType2;
-import com.yourgroup.airbattle.objects.enemyType3;
+import com.yourgroup.airbattle.objects.EnemyType1;
+import com.yourgroup.airbattle.objects.EnemyType2;
+import com.yourgroup.airbattle.objects.EnemyType3;
 import com.yourgroup.airbattle.util.Collision;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
@@ -112,11 +112,11 @@ public class GameWorld {
         GameObject enemy;
 
         if (roll < 70) {
-            enemy = new enemyType1(x, y, enemySprite1);
+            enemy = new EnemyType1(x, y, enemySprite1);
         } else if (roll < 95) {
-            enemy = new enemyType3(x, y, enemySprite3);
+            enemy = new EnemyType3(x, y, enemySprite3);
         } else {
-            enemy = new enemyType2(x, y, enemySprite2);
+            enemy = new EnemyType2(x, y, enemySprite2);
         }
 
         spawn(enemy);
@@ -150,9 +150,9 @@ public class GameWorld {
 
     private int scoreForEnemy(Enemy e) {
         // 按类型给分（你也可以按 hp 给分）
-        if (e instanceof enemyType2) return 1000; // 大的慢Boss
-        if (e instanceof enemyType3) return 150;  // 快/2血
-        if (e instanceof enemyType1) return 100;  // 普通
+        if (e instanceof EnemyType2) return 1000; // 大的慢Boss
+        if (e instanceof EnemyType3) return 150;  // 快/2血
+        if (e instanceof EnemyType1) return 100;  // 普通
         return 100;
     }
 

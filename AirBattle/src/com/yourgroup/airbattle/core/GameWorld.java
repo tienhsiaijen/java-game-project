@@ -24,7 +24,7 @@ public class GameWorld {
 
     private final Random rng = new Random();
 
-    // Resources: load once (used to pass into Player from MainApp)
+    // Resources: load once (Player uses bullet sprite)
     private final Image bulletSprite = new Image("/img/Bullet.png");
     private final Image enemySprite1 = new Image("/img/enemy.png");
     private final Image enemySprite2 = new Image("/img/enemy2.png");
@@ -38,7 +38,6 @@ public class GameWorld {
         this.playfield = playfield;
     }
 
-    /** Expose bullet sprite so MainApp can build Player cleanly. */
     public Image getBulletSprite() {
         return bulletSprite;
     }
@@ -56,9 +55,10 @@ public class GameWorld {
     }
 
     public void update(double dt) {
+        // 0) spawn enemies
         spawnEnemies(dt);
 
-        // Apply pending adds
+        // 1) apply pending adds
         if (!pendingAdd.isEmpty()) {
             for (GameObject o : pendingAdd) {
                 objects.add(o);
@@ -67,24 +67,27 @@ public class GameWorld {
             pendingAdd.clear();
         }
 
-        // Update objects (no special "player fire" logic here anymore)
+        // 2) update objects
         for (GameObject o : objects) {
             if (!o.isAlive()) continue;
 
             o.update(dt);
 
-            // Keep player inside bounds (world is the owner of the playfield size)
+            // Keep player inside world bounds
             if (o instanceof Player p) {
                 p.clampTo(getWorldWidth(), getWorldHeight());
             }
         }
 
-        handleCollisions();
+        // 3) collisions (optimized)
+        handleCollisionsOptimized();
 
+        // 4) render
         for (GameObject o : objects) {
             if (o.isAlive()) o.render();
         }
 
+        // 5) cleanup
         cleanup();
     }
 
@@ -92,6 +95,7 @@ public class GameWorld {
         enemySpawnTimer -= dt;
         if (enemySpawnTimer > 0) return;
 
+        // spawn every 0.8 ~ 1.2 sec
         enemySpawnTimer = 0.8 + rng.nextDouble() * 0.4;
 
         double w = getWorldWidth();
@@ -124,30 +128,90 @@ public class GameWorld {
         return (h > 0) ? h : playfield.getPrefHeight();
     }
 
-    // Same collision fix you already applied: bullet can't multi-hit in one frame
-    private void handleCollisions() {
-        for (int i = 0; i < objects.size(); i++) {
-            GameObject a = objects.get(i);
-            if (!a.isAlive()) continue;
+    /**
+     * Optimized collision detection:
+     * - Instead of checking every pair (O(n^2)), we bucket objects by type
+     *   and only test pairs that can actually collide under our rules:
+     *   1) Player bullets vs Enemies
+     *   2) Player vs Enemies
+     *   3) Player vs Power-ups
+     */
+    private void handleCollisionsOptimized() {
+        // Buckets
+        List<GameObject> bullets = new ArrayList<>();
+        List<GameObject> enemies = new ArrayList<>();
+        List<GameObject> powerups = new ArrayList<>();
+        Player player = null;
 
-            for (int j = i + 1; j < objects.size(); j++) {
-                GameObject b = objects.get(j);
-                if (!b.isAlive()) continue;
+        // 1) Build buckets (single pass)
+        for (GameObject o : objects) {
+            if (!o.isAlive()) continue;
 
-                if (!a.isAlive()) break;
+            switch (o.getType()) {
+                case BULLET_PLAYER:
+                    bullets.add(o);
+                    break;
+                case ENEMY:
+                    enemies.add(o);
+                    break;
+                case POWERUP:
+                    powerups.add(o);
+                    break;
+                case PLAYER:
+                    // Assume one player; if more than one, extend this to a list
+                    if (o instanceof Player p) player = p;
+                    break;
+                default:
+                    break;
+            }
+        }
 
-                if (Collision.aabb(a, b)) {
-                    onCollision(a, b);
-                    if (!a.isAlive()) break;
+        // 2) Bullet vs Enemy (each bullet should hit at most ONE enemy per frame)
+        for (GameObject bullet : bullets) {
+            if (!bullet.isAlive()) continue;
+
+            for (GameObject enemyObj : enemies) {
+                if (!enemyObj.isAlive()) continue;
+
+                if (Collision.aabb(bullet, enemyObj)) {
+                    onCollision(bullet, enemyObj);
+
+                    // If bullet is killed on hit, it must not hit any other enemy this frame.
+                    if (!bullet.isAlive()) break;
+                }
+            }
+        }
+
+        // 3) Player vs Enemy
+        if (player != null && player.isAlive()) {
+            for (GameObject enemyObj : enemies) {
+                if (!enemyObj.isAlive()) continue;
+
+                if (Collision.aabb(player, enemyObj)) {
+                    onCollision(player, enemyObj);
+
+                    // If player dies, no need to continue checking this frame.
+                    if (!player.isAlive()) break;
+                }
+            }
+        }
+
+        // 4) Player vs Power-up
+        if (player != null && player.isAlive() && !powerups.isEmpty()) {
+            for (GameObject pu : powerups) {
+                if (!pu.isAlive()) continue;
+
+                if (Collision.aabb(player, pu)) {
+                    onCollision(player, pu);
                 }
             }
         }
     }
 
     private int scoreForEnemy(Enemy e) {
-        if (e instanceof EnemyType2) return 1000;
-        if (e instanceof EnemyType3) return 150;
-        if (e instanceof EnemyType1) return 100;
+        if (e instanceof EnemyType2) return 1000; // boss
+        if (e instanceof EnemyType3) return 150;  // fast
+        if (e instanceof EnemyType1) return 100;  // normal
         return 100;
     }
 

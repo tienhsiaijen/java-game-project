@@ -54,7 +54,11 @@ public class StartMenu extends VBox {
             "• Type 1 (Normal): standard enemy with basic movement.\n" +
             "• Type 3 (Fast): fast enemy that is harder to track.\n" +
             "• Type 2 (Boss): larger enemy with higher health.\n\n" +
-            "Controls: Arrow keys / WASD to move, SPACE to fire."
+            "Controls: Arrow keys / WASD to move, SPACE to fire." +
+            "Goal: Survive as long as possible and get a higher score." +
+            "Scoring: Destroy enemies to gain score." +
+            "Game Over: When HP reaches 0." +
+            "Pause: Press ESC to pause/resume." 
         );
         tips.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
         tips.setMaxWidth(520);

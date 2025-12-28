@@ -1,7 +1,6 @@
 package com.yourgroup.airbattle.objects;
 
 import javafx.scene.image.Image;
-import com.yourgroup.airbattle.core.GameConfig;
 import com.yourgroup.airbattle.core.ObjectType;
 
 /**
@@ -13,40 +12,53 @@ import com.yourgroup.airbattle.core.ObjectType;
  *
  * <p>Design notes:
  * <ul>
- * <li>This class extends {@link GameObject}, inheriting position, size,
- * rendering, and life-cycle management.</li>
- * <li>The bullet does not manage collision logic directly; instead,
- * collisions are resolved centrally in {@code GameWorld}.</li>
- * <li>Off-screen cleanup is handled defensively to prevent unnecessary
- * memory usage.</li>
+ *   <li>This class extends {@link GameObject}, inheriting position, size,
+ *   rendering, and life-cycle management.</li>
+ *   <li>The bullet does not manage collision logic directly; instead,
+ *   collisions are resolved centrally in {@code GameWorld}.</li>
+ *   <li>Off-screen cleanup is handled defensively to prevent unnecessary
+ *   memory usage.</li>
  * </ul>
  * </p>
  */
 public class Bullet extends GameObject {
 
+    /* =========================
+     * Defaults / Tuning Constants
+     * ========================= */
+
+    /** Default render width of a standard bullet (pixels). */
+    private static final double DEFAULT_BULLET_WIDTH = 6;
+
+    /** Default render height of a standard bullet (pixels). */
+    private static final double DEFAULT_BULLET_HEIGHT = 12;
+
+    /** Default vertical speed for standard bullets (pixels/second). */
+    private static final double DEFAULT_SPEED_Y = 400;
+
+    /** Default horizontal speed for straight bullets (pixels/second). */
+    private static final double DEFAULT_SPEED_X = 0;
+
+    /** Default damage dealt by a standard bullet. */
+    private static final int DEFAULT_DAMAGE = 1;
+
     /**
      * Vertical movement speed of the bullet in pixels per second.
      * A higher value results in faster upward travel.
      */
-    private double speedY = 400;
+    private double speedY = DEFAULT_SPEED_Y;
 
     /**
      * Horizontal movement speed of the bullet in pixels per second.
      * Used for shotgun effects (angled shots).
      */
-    private double speedX = 0;
+    private double speedX = DEFAULT_SPEED_X;
 
     /**
      * The damage value of this bullet.
      * Standard bullets deal 1 damage; Super bullets deal higher damage.
      */
-    private int damage = 1;
-
-    /**
-     * Temporary screen height used for off-screen cleanup.
-     * Matches the current game window height (900x600).
-     */
-    private static final double OFFSCREEN_Y_LIMIT = 600;
+    private int damage = DEFAULT_DAMAGE;
 
     /**
      * Creates a standard player bullet moving straight up.
@@ -56,7 +68,8 @@ public class Bullet extends GameObject {
      * @param sprite image used to render the bullet
      */
     public Bullet(double x, double y, Image sprite) {
-        super(x, y, 6, 12, sprite);
+        // Use named constants instead of raw numbers for default size.
+        super(x, y, DEFAULT_BULLET_WIDTH, DEFAULT_BULLET_HEIGHT, sprite);
     }
 
     /**
@@ -91,21 +104,24 @@ public class Bullet extends GameObject {
      * Updates the bullet's position each frame.
      *
      * <p>The bullet travels based on its vertical and horizontal speed.
-     * When it moves outside the visible screen bounds (with a small margin),
+     * When it moves outside the visible screen bounds (with a configurable margin),
      * it is marked as dead and removed during the cleanup phase.</p>
      *
      * @param dt delta time in seconds since the last frame
      */
     @Override
     public void update(double dt) {
-        // Move the bullet based on its velocity vector.
+        // 1) Move the bullet based on its velocity vector.
+        //    - Y decreases to move "up" on the screen.
+        //    - X may change for shotgun/angled shots.
         y -= speedY * dt;
         x += speedX * dt;
 
-        // Remove the bullet once it leaves the screen bounds (vertical or horizontal).
-        if (y + height < -30 || y > OFFSCREEN_Y_LIMIT + 30 || x < -50 || x > 950) {
-            kill();
-        }
+        // 2) Off-screen cleanup (B3 unified):
+        //    Use the shared helper defined in GameObject.
+        //    This avoids repeating boundary math in every subclass and ensures
+        //    a consistent rule across Bullet / Enemy / Item.
+        killIfOffscreen();
     }
 
     /**

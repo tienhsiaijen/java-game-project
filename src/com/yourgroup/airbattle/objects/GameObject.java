@@ -4,7 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import com.yourgroup.airbattle.core.ObjectType;
-
+import com.yourgroup.airbattle.core.GameConfig;
 /**
  * Abstract base class for all in-game entities in AirBattle.
  *
@@ -218,4 +218,44 @@ public abstract class GameObject {
 
     /** @return render height in pixels */
     public double getHeight() { return height; }
+    // ===== Off-screen helpers (optional for B3 unification) =====
+
+    /**
+     * Returns whether this object is outside the screen bounds, including a configurable margin.
+     *
+     * <p>This helper is intended to unify B3 "off-screen cleanup" logic across
+     * Bullet / Enemy / Item classes without repeating hardcoded numbers.</p>
+     *
+     * <p>Rule:
+     * <ul>
+     *   <li>Top:    (y + height) < -margin</li>
+     *   <li>Bottom: y > (HEIGHT + margin)</li>
+     *   <li>Left:   (x + width) < -margin</li>
+     *   <li>Right:  x > (WIDTH + margin)</li>
+     * </ul>
+     * </p>
+     *
+     * @return true if the object is fully outside the visible area (plus margin)
+     */
+    protected boolean isOffscreen() {
+        final double m = GameConfig.OFFSCREEN_MARGIN;
+
+        boolean outTop = (y + height) < -m;
+        boolean outBottom = y > (GameConfig.HEIGHT + m);
+        boolean outLeft = (x + width) < -m;
+        boolean outRight = x > (GameConfig.WIDTH + m);
+
+        return outTop || outBottom || outLeft || outRight;
+    }
+
+    /**
+     * Convenience method: kills the object if it is off-screen (plus margin).
+     *
+     * <p>Use this in subclasses' update() methods to keep B3 cleanup consistent.</p>
+     */
+    protected void killIfOffscreen() {
+        if (isOffscreen()) {
+            kill();
+        }
+    }
 }

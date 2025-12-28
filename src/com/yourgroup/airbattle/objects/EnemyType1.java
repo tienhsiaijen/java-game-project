@@ -20,12 +20,6 @@ import javafx.scene.image.Image;
 public class EnemyType1 extends Enemy {
 
     /**
-     * Temporary screen height used for off-screen cleanup.
-     * Matches the current fixed game window height.
-     */
-    private static final double DEFAULT_SCREEN_HEIGHT = 600;
-
-    /**
      * Creates a basic enemy with moderate speed and low health.
      *
      * @param x      initial x-coordinate of the enemy
@@ -49,21 +43,24 @@ public class EnemyType1 extends Enemy {
      * </ul>
      * </p>
      *
-     * <p>The enemy is automatically removed once it leaves the screen.</p>
+     * <p>The enemy is automatically removed once it leaves the screen
+     * (with an off-screen margin).</p>
      *
      * @param dt delta time in seconds since the last frame
      */
     @Override
     public void update(double dt) {
-        // Vertical movement.
+        // 1) Vertical movement.
         y += speed * dt;
 
-        // Horizontal oscillation for more dynamic movement.
+        // 2) Horizontal oscillation for more dynamic movement.
         x += Math.sin(y * 0.05) * 50 * dt;
 
-        // Remove enemy once it leaves the visible area.
-        if (y > DEFAULT_SCREEN_HEIGHT + 50) {
-            kill();
-        }
+        // 3) Off-screen cleanup (B3 unified):
+        //    Delegate boundary checking to the shared helper in GameObject.
+        //    This avoids duplicating screen-size logic and keeps removal
+        //    behavior consistent across all game objects.
+        killIfOffscreen();
     }
 }
+

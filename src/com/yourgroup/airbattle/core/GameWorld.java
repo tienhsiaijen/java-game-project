@@ -1,15 +1,29 @@
 package com.yourgroup.airbattle.core;
 
-import com.yourgroup.airbattle.objects.*; // Ensure all Item subclasses are visible
-import com.yourgroup.airbattle.util.Collision;
-import com.yourgroup.airbattle.util.SoundManager;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Pane;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+
+// Ensure all Item subclasses are visible
+import com.yourgroup.airbattle.objects.Bullet;
+import com.yourgroup.airbattle.objects.Enemy;
+import com.yourgroup.airbattle.objects.EnemyType1;
+import com.yourgroup.airbattle.objects.EnemyType2;
+import com.yourgroup.airbattle.objects.EnemyType3;
+import com.yourgroup.airbattle.objects.GameObject;
+import com.yourgroup.airbattle.objects.Item;
+import com.yourgroup.airbattle.objects.ItemHeal;
+import com.yourgroup.airbattle.objects.ItemRampage;
+import com.yourgroup.airbattle.objects.ItemShield;
+import com.yourgroup.airbattle.objects.ItemShotgun;
+import com.yourgroup.airbattle.objects.ItemSuper;
+import com.yourgroup.airbattle.objects.Player;
+import com.yourgroup.airbattle.util.Collision;
+import com.yourgroup.airbattle.util.SoundManager;
+
+import javafx.scene.image.Image;
+import javafx.scene.layout.Pane;
 
 /**
  * The central runtime container that owns all game entities and updates them each frame.
@@ -313,8 +327,8 @@ public class GameWorld {
                     if (pu instanceof Item it) {
                         it.apply(player);
                         // Optional: SoundManager.playItemGet();
+                        pu.kill();
                     }
-                    pu.kill();
                 }
             }
         }

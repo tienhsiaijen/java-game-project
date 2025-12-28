@@ -2,6 +2,7 @@ package com.yourgroup.airbattle;
 
 import com.yourgroup.airbattle.core.GameLoop;
 import com.yourgroup.airbattle.core.GameWorld;
+import com.yourgroup.airbattle.core.GameState;
 import com.yourgroup.airbattle.input.InputHandler;
 import com.yourgroup.airbattle.objects.Player;
 import com.yourgroup.airbattle.ui.GameOverMenu;
@@ -38,7 +39,7 @@ import com.yourgroup.airbattle.core.GameConfig;
 public class MainApp extends Application {
 
 
-    private boolean paused = false;
+	private GameState state = GameState.START_MENU;
     private boolean gameOverShown = false;
 
     private AnchorPane root;
@@ -83,19 +84,21 @@ public class MainApp extends Application {
         input = new InputHandler(scene);
 
         pauseMenu = new PauseMenu(
-                () -> {
-                    root.getChildren().remove(pauseMenu);
-                    loop.startRunning();
-                    if (hud != null) hud.setVisible(true);
-                    paused = false;
-                },
-                stage::close
-        );
+        	    () -> {
+        	        root.getChildren().remove(pauseMenu);
+        	        if (hud != null) hud.setVisible(true);
+        	        loop.startRunning();
+        	        state = GameState.RUNNING;   
+        	    },
+        	    stage::close
+        	);
+
 
         startMenu = new StartMenu(
                 () -> {
                     root.getChildren().remove(startMenu);
                     initNewGame(stage);
+                    state = GameState.RUNNING;
                 },
                 stage::close
         );
@@ -113,7 +116,10 @@ public class MainApp extends Application {
         // ESC toggles pause/resume during gameplay.
         scene.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                togglePause(stage);
+                // Only allow pause toggling during active gameplay states.
+                if (state == GameState.RUNNING || state == GameState.PAUSED) {
+                    togglePause(stage);
+                }
             }
         });
     }
@@ -157,7 +163,7 @@ public class MainApp extends Application {
         hud = new HUD();
         root.getChildren().add(hud);
 
-        paused = false;
+        state = GameState.RUNNING;
         gameOverShown = false;
 
         // Play gameplay BGM.
@@ -187,6 +193,7 @@ public class MainApp extends Application {
                 // Trigger game-over once when the player dies.
                 if (!gameOverShown && player != null && !player.isAlive()) {
                     gameOverShown = true;
+                    state = GameState.GAME_OVER;  
                     showGameOver(stage);
                 }
             }
@@ -194,34 +201,69 @@ public class MainApp extends Application {
     }
 
     /**
-     * Toggles pause/resume state when ESC is pressed.
+     * Toggle pause/resume when ESC is pressed.
      *
-     * <p>Pause is ignored when the game is not running (start menu) or after game over.</p>
+     * <p>State rules:
+     * <ul>
+     *   <li>Only RUNNING <-> PAUSED is allowed.</li>
+     *   <li>Pause/resume is ignored during START_MENU and after GAME_OVER.</li>
+     * </ul>
+     *
+     * <p>UI rules:
+     * <ul>
+     *   <li>When paused: show PauseMenu overlay and hide HUD.</li>
+     *   <li>When resumed: remove PauseMenu overlay and show HUD.</li>
+     * </ul>
+     *
+     * <p>Note: {@code stage} is kept for signature consistency (and future use),
+     * but is not required for pause/resume logic.</p>
      */
     private void togglePause(Stage stage) {
+        // 0) Do not allow pausing in game-over state or before a session starts.
+        //    (gameOverShown is your existing one-shot latch for game over.)
         if (gameOverShown) return;
         if (loop == null || player == null) return;
 
-        if (!paused && loop.isRunning()) {
-            // Pause
+        // 1) Pause: only allowed when the game is actively running.
+        if (state == GameState.RUNNING && loop.isRunning()) {
+
+            // 1.1 Stop the game loop so no updates/movement happen while paused.
             loop.pauseRunning();
-            root.getChildren().add(pauseMenu);
 
-            AnchorPane.setTopAnchor(pauseMenu, 0.0);
-            AnchorPane.setBottomAnchor(pauseMenu, 0.0);
-            AnchorPane.setLeftAnchor(pauseMenu, 0.0);
-            AnchorPane.setRightAnchor(pauseMenu, 0.0);
+            // 1.2 Show pause overlay (full-screen anchored).
+            if (!root.getChildren().contains(pauseMenu)) {
+                root.getChildren().add(pauseMenu);
+                AnchorPane.setTopAnchor(pauseMenu, 0.0);
+                AnchorPane.setBottomAnchor(pauseMenu, 0.0);
+                AnchorPane.setLeftAnchor(pauseMenu, 0.0);
+                AnchorPane.setRightAnchor(pauseMenu, 0.0);
+            }
 
+            // 1.3 Hide HUD to keep the pause overlay clean.
             if (hud != null) hud.setVisible(false);
-            paused = true;
-        } else if (paused) {
-            // Resume
+
+            // 1.4 Update state last to keep state consistent with the actual actions above.
+            state = GameState.PAUSED;
+            return;
+        }
+
+        // 2) Resume: only allowed when the current state is PAUSED.
+        if (state == GameState.PAUSED) {
+
+            // 2.1 Remove pause overlay.
             root.getChildren().remove(pauseMenu);
-            loop.startRunning();
+
+            // 2.2 Restore HUD.
             if (hud != null) hud.setVisible(true);
-            paused = false;
+
+            // 2.3 Resume the game loop.
+            loop.startRunning();
+
+            // 2.4 Update state last.
+            state = GameState.RUNNING;
         }
     }
+
 
     /**
      * Ensures the background image is present as the bottom-most node in the playfield.

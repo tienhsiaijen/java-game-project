@@ -1,6 +1,7 @@
 package com.yourgroup.airbattle.objects;
 
 import javafx.scene.image.Image;
+import com.yourgroup.airbattle.core.GameConfig;
 
 /**
  * Fast-moving enemy type with low health.
@@ -25,12 +26,6 @@ public class EnemyType3 extends Enemy {
      * A value of 1 moves right, and -1 moves left.
      */
     private double dirX = 1;
-
-    /** Fixed screen width used for horizontal boundary checks. */
-    private static final double DEFAULT_SCREEN_WIDTH = 900;
-
-    /** Fixed screen height used for off-screen cleanup. */
-    private static final double DEFAULT_SCREEN_HEIGHT = 600;
 
     /**
      * Creates a fast enemy with high speed and minimal health.
@@ -60,26 +55,29 @@ public class EnemyType3 extends Enemy {
      * </ul>
      * </p>
      *
-     * <p>The enemy is removed once it leaves the visible area.</p>
+     * <p>The enemy is removed once it leaves the visible area
+     * (with an off-screen margin).</p>
      *
      * @param dt delta time in seconds since the last frame
      */
     @Override
     public void update(double dt) {
-        // Vertical movement.
+        // 1) Vertical movement.
         y += speed * dt;
 
-        // Fast horizontal movement.
+        // 2) Fast horizontal movement.
         x += dirX * 260 * dt;
 
-        // Reverse direction at screen edges.
-        if (x <= 0 || x + width >= DEFAULT_SCREEN_WIDTH) {
+        // 3) Reverse direction at screen edges.
+        //    This is movement logic, NOT off-screen cleanup.
+        if (x <= 0 || x + width >= GameConfig.WIDTH) {
             dirX *= -1;
         }
 
-        // Remove enemy once it leaves the screen.
-        if (y > DEFAULT_SCREEN_HEIGHT + 50) {
-            kill();
-        }
+        // 4) Off-screen cleanup (B3 unified):
+        //    Delegate boundary checking to the shared helper in GameObject.
+        //    This keeps off-screen removal logic consistent across
+        //    Bullet / Enemy / Item and avoids direct screen-size checks here.
+        killIfOffscreen();
     }
 }

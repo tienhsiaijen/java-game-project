@@ -21,23 +21,33 @@ import javafx.scene.image.Image;
  */
 public class Enemy extends GameObject {
 
+    /* =========================
+     * Defaults / Tuning Constants
+     * ========================= */
+
+    /** Default render width of a basic enemy (pixels). */
+    private static final double DEFAULT_ENEMY_WIDTH = 40;
+
+    /** Default render height of a basic enemy (pixels). */
+    private static final double DEFAULT_ENEMY_HEIGHT = 40;
+
+    /** Default downward speed for a basic enemy (pixels/second). */
+    protected static final double DEFAULT_SPEED = 100;
+
+    /** Default health points for a basic enemy. */
+    protected static final int DEFAULT_HP = 1;
+
     /**
      * Downward movement speed in pixels per second.
      * Subclasses may override this value to represent faster or slower enemies.
      */
-    protected double speed = 100;
+    protected double speed = DEFAULT_SPEED;
 
     /**
      * Current health points of the enemy.
      * When HP reaches zero or below, the enemy is destroyed.
      */
-    protected int hp = 1;
-
-    /**
-     * Temporary screen height used to determine when the enemy
-     * has moved completely off-screen.
-     */
-    private static final double DEFAULT_DEFAULT_SCREEN_HEIGHTEIGHT = 600;
+    protected int hp = DEFAULT_HP;
 
     /**
      * Creates a new enemy at the specified position.
@@ -47,7 +57,8 @@ public class Enemy extends GameObject {
      * @param sprite image used to render the enemy
      */
     public Enemy(double x, double y, Image sprite) {
-        super(x, y, 40, 40, sprite);
+        // Use named constants rather than raw numbers to avoid magic values.
+        super(x, y, DEFAULT_ENEMY_WIDTH, DEFAULT_ENEMY_HEIGHT, sprite);
     }
 
     /**
@@ -62,20 +73,24 @@ public class Enemy extends GameObject {
      * Updates the enemy's position each frame.
      *
      * <p>The enemy moves downward at a constant speed. If it travels
-     * beyond the visible screen area, it is marked as dead and will be
-     * removed during the cleanup phase.</p>
+     * beyond the visible screen area (plus an off-screen margin),
+     * it is marked as dead and will be removed during the cleanup phase.</p>
      *
      * @param dt delta time in seconds since the last frame
      */
     @Override
     public void update(double dt) {
-        // Move the enemy downward.
+        // 1) Movement: enemies fall downward at their configured speed.
         y += speed * dt;
 
-        // Remove enemy once it leaves the screen.
-        if (y > DEFAULT_DEFAULT_SCREEN_HEIGHTEIGHT + 50) {
-            kill();
-        }
+        // 2) Off-screen cleanup (B3 unified):
+        //    Use the shared helper in GameObject instead of repeating boundary math
+        //    or directly referencing GameConfig here.
+        //
+        //    Benefit:
+        //    - One consistent rule across Bullet / Enemy / Item.
+        //    - No hardcoded screen sizes or margins.
+        killIfOffscreen();
     }
 
     /**

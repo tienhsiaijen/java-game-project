@@ -1,6 +1,7 @@
 package com.yourgroup.airbattle.objects;
 
 import javafx.scene.image.Image;
+import com.yourgroup.airbattle.core.GameConfig;
 
 /**
  * Boss-type enemy with large size, high health, and horizontal patrol behavior.
@@ -26,12 +27,6 @@ public class EnemyType2 extends Enemy {
      */
     private double dirX = 1;
 
-    /** Fixed screen width used for horizontal boundary checks. */
-    private static final double DEFAULT_SCREEN_WIDTH = 900;
-
-    /** Fixed screen height used for off-screen cleanup. */
-    private static final double DEFAULT_SCREEN_HEIGHT = 600;
-
     /**
      * Creates a boss-type enemy with increased size, speed, and health.
      *
@@ -42,10 +37,9 @@ public class EnemyType2 extends Enemy {
     public EnemyType2(double x, double y, Image sprite) {
         super(x, y, sprite);
 
-     // Synchronize logical size with visual size.
-     // This ensures collision detection matches the visible sprite.
-     setSize(120, 120);
-
+        // Synchronize logical size with visual size.
+        // This ensures collision detection matches the visible sprite.
+        setSize(120, 120);
 
         // Boss enemies move faster and have significantly more health.
         speed = 240;
@@ -91,20 +85,23 @@ public class EnemyType2 extends Enemy {
      */
     @Override
     public void update(double dt) {
-        // Vertical descent.
+        // 1) Vertical descent.
         y += speed * dt;
 
-        // Horizontal patrol movement.
+        // 2) Horizontal patrol movement.
         x += dirX * 260 * dt;
 
-        // Reverse direction when reaching screen edges.
-        if (x <= 0 || x + width >= DEFAULT_SCREEN_WIDTH) {
+        // 3) Horizontal boundary handling:
+        //    Keep the boss within the visible screen bounds.
+        //    This is NOT off-screen cleanup; it is the boss movement rule.
+        if (x <= 0 || x + width >= GameConfig.WIDTH) {
             dirX *= -1;
         }
 
-        // Remove enemy once it leaves the screen.
-        if (y > DEFAULT_SCREEN_HEIGHT + 80) {
-            kill();
-        }
+        // 4) Off-screen cleanup (B3 unified):
+        //    Delegate boundary checking to the shared helper in GameObject.
+        //    This avoids duplicating screen-size logic and keeps removal behavior
+        //    consistent across all object types.
+        killIfOffscreen();
     }
 }

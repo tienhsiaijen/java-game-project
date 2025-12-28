@@ -36,14 +36,6 @@ public abstract class Item extends GameObject {
     protected double fallSpeed = 80;
 
     /**
-     * Temporary screen height used for off-screen cleanup.
-     *
-     * <p>This value matches the current fixed window size (900x600).
-     * It can be replaced with a dynamic query if the window becomes resizable.</p>
-     */
-    private static final double DEFAULT_SCREEN_HEIGHT = 600;
-
-    /**
      * Creates a new collectible item.
      *
      * @param x      initial x-coordinate of the item
@@ -69,19 +61,24 @@ public abstract class Item extends GameObject {
      * Updates the item's position each frame.
      *
      * <p>The item falls downward at a constant speed. Once it moves beyond
-     * the visible screen area, it is marked as dead and removed during cleanup.</p>
+     * the visible screen area (plus an off-screen margin), it is marked as dead
+     * and removed during cleanup.</p>
      *
      * @param dt delta time in seconds since the last frame
      */
     @Override
     public void update(double dt) {
-        // Apply downward movement.
+        // 1) Apply downward movement.
         y += fallSpeed * dt;
 
-        // Remove item once it leaves the screen.
-        if (y > DEFAULT_SCREEN_HEIGHT + 50) {
-            kill();
-        }
+        // 2) Off-screen cleanup (B3 unified):
+        //    Use the shared helper in GameObject instead of hardcoding screen size
+        //    (e.g., 600) or magic offsets (e.g., +50).
+        //
+        //    Benefit:
+        //    - One consistent removal rule across Bullet / Enemy / Item.
+        //    - Automatically adapts if window size changes.
+        killIfOffscreen();
     }
 
     /**

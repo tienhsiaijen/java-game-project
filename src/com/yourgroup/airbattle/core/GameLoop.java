@@ -8,7 +8,7 @@ import javafx.animation.AnimationTimer;
  * <p>This class is intentionally lightweight: it only calculates delta time (dt)
  * and delegates the actual game logic update to {@link GameWorld#update(double)}.
  *
- * <p>Start/Pause behavior is controlled externally (e.g., by MainApp via GameState),
+ * <p>Start/Pause behavior is controlled externally (e.g., by MainApp via (pause/gameOver flags)),
  * while this loop maintains a simple {@code running} flag to ignore frames when paused.
  */
 public class GameLoop extends AnimationTimer {

@@ -160,28 +160,31 @@ public class GameWorld {
     }
 
     /**
-     * Attempts to spawn a random item at the given location.
+     * Attempts to spawn a random item at the given location when an enemy is defeated.
      *
-     * <p>Note: The current drop rate is set high (50%) for testing. For a normal game
-     * experience you may lower it (e.g., 20%).
+     * <p>Drop chance is controlled by {@link #ITEM_DROP_RATE_PERCENT} so gameplay balance
+     * can be tuned without touching core logic.</p>
      *
      * @param x spawn x position (typically enemy's x at death)
      * @param y spawn y position (typically enemy's y at death)
      */
+    private static final int ITEM_DROP_RATE_PERCENT = 20;
+
     private void trySpawnItem(double x, double y) {
-        // 50% drop chance for easier testing (adjust later as needed)
-        if (rng.nextInt(100) < 50) {
+        // Drop chance (percentage)
+        if (rng.nextInt(100) < ITEM_DROP_RATE_PERCENT) {
             int itemType = rng.nextInt(5); // 0..4 choose one item type
             switch (itemType) {
-                case 0: spawn(new ItemHeal(x, y, itemHealImg)); break;
-                case 1: spawn(new ItemRampage(x, y, itemRampageImg)); break;
-                case 2: spawn(new ItemSuper(x, y, itemSuperImg)); break;
-                case 3: spawn(new ItemShotgun(x, y, itemShotgunImg)); break;
-                case 4: spawn(new ItemShield(x, y, itemShieldImg)); break;
-                default: break;
+                case 0 -> spawn(new ItemHeal(x, y, itemHealImg));
+                case 1 -> spawn(new ItemRampage(x, y, itemRampageImg));
+                case 2 -> spawn(new ItemSuper(x, y, itemSuperImg));
+                case 3 -> spawn(new ItemShotgun(x, y, itemShotgunImg));
+                case 4 -> spawn(new ItemShield(x, y, itemShieldImg));
+                default -> { /* no-op */ }
             }
         }
     }
+
 
     /**
      * Spawns enemies based on a countdown timer.

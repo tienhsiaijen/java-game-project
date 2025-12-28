@@ -1,6 +1,7 @@
 package com.yourgroup.airbattle.objects;
 
 import javafx.scene.image.Image;
+import com.yourgroup.airbattle.core.GameConfig;
 import com.yourgroup.airbattle.core.ObjectType;
 
 /**

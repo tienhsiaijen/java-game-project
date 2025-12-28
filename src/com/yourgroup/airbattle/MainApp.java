@@ -17,6 +17,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import com.yourgroup.airbattle.core.GameConfig;
+
 
 /**
  * Main JavaFX application entry point for AirBattle.
@@ -35,8 +37,6 @@ import javafx.stage.Stage;
  */
 public class MainApp extends Application {
 
-    private static final double WIDTH = 900;
-    private static final double HEIGHT = 600;
 
     private boolean paused = false;
     private boolean gameOverShown = false;
@@ -59,7 +59,7 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) {
         root = new AnchorPane();
-        root.setPrefSize(WIDTH, HEIGHT);
+        root.setPrefSize(GameConfig.WIDTH, GameConfig.HEIGHT);
 
         playfield = new AnchorPane();
         AnchorPane.setTopAnchor(playfield, 0.0);
@@ -74,7 +74,7 @@ public class MainApp extends Application {
         world = new GameWorld(playfield);
         loop = createLoop(stage);
 
-        Scene scene = new Scene(root, WIDTH, HEIGHT);
+        Scene scene = new Scene(root, GameConfig.WIDTH, GameConfig.HEIGHT);
         stage.setScene(scene);
         stage.setTitle("AirBattle");
         stage.setResizable(false);
@@ -128,6 +128,7 @@ public class MainApp extends Application {
      * </ul>
      */
     private void initNewGame(Stage stage) {
+    	if (input != null) input.clear();
         // Reset visuals.
         playfield.getChildren().clear();
         setupBackground();
@@ -233,8 +234,8 @@ public class MainApp extends Application {
 
         if (bgView == null) {
             bgView = new ImageView();
-            bgView.setFitWidth(WIDTH);
-            bgView.setFitHeight(HEIGHT);
+            bgView.setFitWidth(GameConfig.WIDTH);
+            bgView.setFitHeight(GameConfig.HEIGHT);
             bgView.setPreserveRatio(false);
             bgView.setLayoutX(0);
             bgView.setLayoutY(0);
@@ -262,7 +263,7 @@ public class MainApp extends Application {
 
         loop.pauseRunning();
 
-        int finalScore = (hud == null) ? 0 : hud.getScore();
+        int finalScore = (world == null) ? 0 : world.getScore();
 
         GameOverMenu gameOverMenu = new GameOverMenu(
                 finalScore,

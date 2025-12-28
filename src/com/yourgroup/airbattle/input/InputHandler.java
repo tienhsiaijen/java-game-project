@@ -89,4 +89,7 @@ public class InputHandler {
     public boolean fire() {
         return isPressed(KeyCode.SPACE);
     }
+    public void clear() {
+        pressedKeys.clear();
+    }
 }

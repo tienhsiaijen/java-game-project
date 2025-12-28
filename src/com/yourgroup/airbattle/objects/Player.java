@@ -183,13 +183,12 @@ public class Player extends GameObject {
 
         // --- Firing Logic (supports multiple active effects) ---
 
-        // Auto-fire mode: fire automatically without requiring key press.
-        if (isAutoFire) {
-            if (canFire()) fireWeapon();
-        } else if (input.fire()) {
-            // Normal mode: fire only while the fire key is pressed.
-            if (canFire()) fireWeapon();
-        }
+     // Fire only when SPACE is pressed.
+     // AutoFire affects fire rate / bullet attributes, but does NOT shoot by itself.
+     if (input.fire()) {
+         if (canFire()) fireWeapon();
+     }
+
     }
 
     /**

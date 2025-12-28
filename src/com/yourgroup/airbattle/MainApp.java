@@ -17,6 +17,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import com.yourgroup.airbattle.core.GameConfig;
 
@@ -79,20 +82,31 @@ public class MainApp extends Application {
         stage.setScene(scene);
         stage.setTitle("AirBattle");
         stage.setResizable(false);
+
+        // Disable JavaFX default fullscreen exit behavior.
+        // ESC is reserved for pause/resume, so we block the default ESC-to-exit-fullscreen shortcut.
+        stage.setFullScreenExitHint("");
+        stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+
         stage.show();
+
+        // Keep the game's logical coordinate system (GameConfig.WIDTH/HEIGHT) stable,
+        // and scale the UI to fit the actual window/fullscreen size.
+        scene.widthProperty().addListener((obs, oldV, newV) -> updateScale(scene));
+        scene.heightProperty().addListener((obs, oldV, newV) -> updateScale(scene));
+        updateScale(scene);
 
         input = new InputHandler(scene);
 
         pauseMenu = new PauseMenu(
-        	    () -> {
-        	        root.getChildren().remove(pauseMenu);
-        	        if (hud != null) hud.setVisible(true);
-        	        loop.startRunning();
-        	        state = GameState.RUNNING;   
-        	    },
-        	    stage::close
-        	);
-
+                () -> {
+                    root.getChildren().remove(pauseMenu);
+                    if (hud != null) hud.setVisible(true);
+                    loop.startRunning();
+                    state = GameState.RUNNING;
+                },
+                stage::close
+        );
 
         startMenu = new StartMenu(
                 () -> {
@@ -113,13 +127,18 @@ public class MainApp extends Application {
         // Play start/menu BGM.
         SoundManager.playStartBgm();
 
-        // ESC toggles pause/resume during gameplay.
+        // Global key bindings (window-level actions):
+        // - ESC: toggle pause/resume during gameplay
+        // - P  : toggle fullscreen/windowed mode
         scene.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
-            if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+            if (e.getCode() == KeyCode.ESCAPE) {
                 // Only allow pause toggling during active gameplay states.
                 if (state == GameState.RUNNING || state == GameState.PAUSED) {
                     togglePause(stage);
                 }
+            } else if (e.getCode() == KeyCode.P) {
+                // Fullscreen toggle is a window-level concern, so it is handled here (not in InputHandler).
+                stage.setFullScreen(!stage.isFullScreen());
             }
         });
     }
@@ -281,7 +300,12 @@ public class MainApp extends Application {
             bgView.setPreserveRatio(false);
             bgView.setLayoutX(0);
             bgView.setLayoutY(0);
+
+            // Bind background size to playfield size for smooth resizing/fullscreen.
+            bgView.fitWidthProperty().bind(playfield.widthProperty());
+            bgView.fitHeightProperty().bind(playfield.heightProperty());
         }
+
 
         bgView.setImage(bg);
 
@@ -325,6 +349,15 @@ public class MainApp extends Application {
         AnchorPane.setBottomAnchor(gameOverMenu, 0.0);
         AnchorPane.setLeftAnchor(gameOverMenu, 0.0);
         AnchorPane.setRightAnchor(gameOverMenu, 0.0);
+    }
+
+    private void updateScale(Scene scene) {
+        double sx = scene.getWidth() / GameConfig.WIDTH;
+        double sy = scene.getHeight() / GameConfig.HEIGHT;
+        double s = Math.min(sx, sy);
+
+        root.setScaleX(s);
+        root.setScaleY(s);
     }
 
     public static void main(String[] args) {

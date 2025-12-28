@@ -3,19 +3,20 @@ package com.yourgroup.airbattle.objects;
 import javafx.scene.image.Image;
 import com.yourgroup.airbattle.core.GameConfig;
 
+
 /**
- * Fast-moving enemy type with low health.
+ * Boss-type enemy with large size, high health, and horizontal patrol behavior.
  *
- * <p>{@code EnemyType3} is designed to pressure the player through
- * high movement speed rather than durability. It moves quickly both
- * vertically and horizontally, making it harder to track and hit,
- * despite having only a single health point.</p>
+ * <p>{@code EnemyType2} represents a high-difficulty enemy designed to
+ * challenge the player through increased durability and screen-wide movement.
+ * Unlike basic enemies, it occupies more space and requires multiple hits
+ * to defeat.</p>
  *
- * <p>Design intent:
+ * <p>Design highlights:
  * <ul>
- *   <li>Demonstrates polymorphism by overriding {@link #update(double)}.</li>
- *   <li>Balances difficulty using speed instead of health.</li>
- *   <li>Provides gameplay variety alongside slower or stronger enemy types.</li>
+ *   <li>Demonstrates inheritance by extending {@link Enemy}.</li>
+ *   <li>Overrides hitbox configuration to improve collision accuracy.</li>
+ *   <li>Implements distinct movement logic to differentiate boss behavior.</li>
  * </ul>
  * </p>
  */
@@ -28,7 +29,7 @@ public class EnemyType3 extends Enemy {
     private double dirX = 1;
 
     /**
-     * Creates a fast enemy with high speed and minimal health.
+     * Creates a boss-type enemy with increased size, speed, and health.
      *
      * @param x      initial x-coordinate of the enemy
      * @param y      initial y-coordinate of the enemy
@@ -37,47 +38,75 @@ public class EnemyType3 extends Enemy {
     public EnemyType3(double x, double y, Image sprite) {
         super(x, y, sprite);
 
-        // Fast descent speed increases reaction difficulty for the player.
-        speed = 240;
+        // Synchronize logical size with visual size.
+        // This ensures collision detection matches the visible sprite.
+        setSize(120, 120);
 
-        // Low HP compensates for the high movement speed.
-        hp = 1;
+        // Boss enemies move faster and have significantly more health.
+        speed = 240;
+        hp = 10;
     }
 
     /**
-     * Updates the enemy's position each frame.
+     * Reduces the horizontal hitbox size to compensate for transparent
+     * padding in the sprite image.
+     *
+     * @return horizontal hitbox inset in pixels
+     */
+    @Override
+    protected double hitboxInsetX() {
+        return 14;
+    }
+
+    /**
+     * Reduces the vertical hitbox size to compensate for transparent
+     * padding in the sprite image.
+     *
+     * @return vertical hitbox inset in pixels
+     */
+    @Override
+    protected double hitboxInsetY() {
+        return 14;
+    }
+
+    /**
+     * Updates the boss enemy's position each frame.
      *
      * <p>Movement behavior:
      * <ul>
-     *   <li>Rapid downward movement.</li>
-     *   <li>Fast horizontal patrol across the screen.</li>
-     *   <li>Direction reversal at screen boundaries.</li>
+     *   <li>Moves downward at a constant speed.</li>
+     *   <li>Patrols horizontally across the screen.</li>
+     *   <li>Reverses direction upon hitting the left or right screen boundary.</li>
      * </ul>
      * </p>
      *
-     * <p>The enemy is removed once it leaves the visible area
-     * (with an off-screen margin).</p>
+     * <p>The enemy is removed once it leaves the visible area.</p>
      *
      * @param dt delta time in seconds since the last frame
      */
     @Override
     public void update(double dt) {
-        // 1) Vertical movement.
+        // 1) Vertical descent.
         y += speed * dt;
 
-        // 2) Fast horizontal movement.
+        // 2) Horizontal patrol movement.
         x += dirX * 260 * dt;
 
-        // 3) Reverse direction at screen edges.
-        //    This is movement logic, NOT off-screen cleanup.
+        // 3) Horizontal boundary handling:
+        //    Keep the boss within the visible screen bounds.
+        //    This is NOT off-screen cleanup; it is the boss movement rule.
         if (x <= 0 || x + width >= GameConfig.WIDTH) {
             dirX *= -1;
         }
 
         // 4) Off-screen cleanup (B3 unified):
         //    Delegate boundary checking to the shared helper in GameObject.
-        //    This keeps off-screen removal logic consistent across
-        //    Bullet / Enemy / Item and avoids direct screen-size checks here.
+        //    This avoids duplicating screen-size logic and keeps removal behavior
+        //    consistent across all object types.
         killIfOffscreen();
+    }
+    @Override
+    public int scoreValue() {
+        return 1000;
     }
 }

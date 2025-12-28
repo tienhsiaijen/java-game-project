@@ -35,6 +35,10 @@ public class InputHandler {
     /**
      * Creates an InputHandler and attaches key listeners to the given scene.
      *
+     * <p>KEY_PRESSED events add keys to the set, while KEY_RELEASED events
+     * remove them. Repeated KEY_PRESSED events caused by holding a key
+     * do not affect correctness because {@link Set} prevents duplicates.</p>
+     *
      * @param scene the JavaFX scene that receives keyboard input
      */
     public InputHandler(Scene scene) {
@@ -55,41 +59,39 @@ public class InputHandler {
         return pressedKeys.contains(key);
     }
 
-    /**
-     * @return true if the "move up" action is active (W or UP arrow)
-     */
+    /** @return true if the "move up" action is active (W or UP arrow) */
     public boolean up() {
         return isPressed(KeyCode.W) || isPressed(KeyCode.UP);
     }
 
-    /**
-     * @return true if the "move down" action is active (S or DOWN arrow)
-     */
+    /** @return true if the "move down" action is active (S or DOWN arrow) */
     public boolean down() {
         return isPressed(KeyCode.S) || isPressed(KeyCode.DOWN);
     }
 
-    /**
-     * @return true if the "move left" action is active (A or LEFT arrow)
-     */
+    /** @return true if the "move left" action is active (A or LEFT arrow) */
     public boolean left() {
         return isPressed(KeyCode.A) || isPressed(KeyCode.LEFT);
     }
 
-    /**
-     * @return true if the "move right" action is active (D or RIGHT arrow)
-     */
+    /** @return true if the "move right" action is active (D or RIGHT arrow) */
     public boolean right() {
         return isPressed(KeyCode.D) || isPressed(KeyCode.RIGHT);
     }
 
-    /**
-     * @return true if the "fire weapon" action is active (SPACE key)
-     */
+    /** @return true if the "fire weapon" action is active (SPACE key) */
     public boolean fire() {
         return isPressed(KeyCode.SPACE);
     }
+
+    /**
+     * Clears all currently tracked key states.
+     *
+     * <p>This should be called when switching game states (e.g., starting a new game
+     * or returning to the menu) to prevent stuck-key behavior.</p>
+     */
     public void clear() {
         pressedKeys.clear();
     }
 }
+

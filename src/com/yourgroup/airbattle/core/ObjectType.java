@@ -39,5 +39,10 @@ public enum ObjectType {
     BULLET_ENEMY,
 
     /** Collectible item that provides a temporary or permanent effect. */
-    POWERUP
+    POWERUP,
+    /** 
+     * Non-interactive visual or status effect that follows or decorates a game object.
+     * Effects are not collectible and do not participate in collision handling.
+     */
+    EFFECT
 }

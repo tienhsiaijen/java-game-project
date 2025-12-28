@@ -63,17 +63,17 @@ public class GameWorld {
     private final Image bulletSprite = com.yourgroup.airbattle.util.Assets.image("/img/Bullet.png");
     /** Default enemy sprite (type 1). */
     private final Image enemySprite1 = com.yourgroup.airbattle.util.Assets.image("/img/enemy.png");
-    /** Enemy sprite (type 2). */
+    /** Enemy sprite (type 2: fast). */
     private final Image enemySprite2 = com.yourgroup.airbattle.util.Assets.image("/img/enemy2.png");
-    /** Enemy sprite (fast/type 3). */
-    private final Image enemySprite3 = com.yourgroup.airbattle.util.Assets.image("/img/enemyFast.png");
+    /** Enemy sprite (type 3: boss). */
+    private final Image enemySprite3 = com.yourgroup.airbattle.util.Assets.image("/img/enemy3(Boss).png");
 
     // --- Power-up item sprites (match exact filenames) ---
     private final Image itemHealImg    = com.yourgroup.airbattle.util.Assets.image("/img/item_heal.png");
-    private final Image itemRampageImg = com.yourgroup.airbattle.util.Assets.image("/img/item_GoBallistic.png"); // Rampage
-    private final Image itemSuperImg   = com.yourgroup.airbattle.util.Assets.image("/img/item_SuperBullet.png"); // Super bullet
-    private final Image itemShotgunImg = com.yourgroup.airbattle.util.Assets.image("/img/item_MoreBullet.png");  // More bullets
-    private final Image itemShieldImg  = com.yourgroup.airbattle.util.Assets.image("/img/item_SpeedAndShield.png"); // Speed + shield
+    private final Image itemRampageImg = com.yourgroup.airbattle.util.Assets.image("/img/item_GoBallistic.png");     // Rampage
+    private final Image itemSuperImg   = com.yourgroup.airbattle.util.Assets.image("/img/item_SuperBullet.png");     // Super bullet
+    private final Image itemShotgunImg = com.yourgroup.airbattle.util.Assets.image("/img/item_MoreBullet.png");      // Shotgun
+    private final Image itemShieldImg  = com.yourgroup.airbattle.util.Assets.image("/img/item_SpeedAndShield.png");  // Speed + shield
 
     /** Countdown timer (seconds) to control enemy spawn rate. */
     private double enemySpawnTimer = 0.0;
@@ -97,9 +97,7 @@ public class GameWorld {
         return bulletSprite;
     }
 
-    /**
-     * @return current score
-     */
+    /** @return current score */
     public int getScore() {
         return score;
     }
@@ -117,7 +115,7 @@ public class GameWorld {
      * Requests a {@link GameObject} to be spawned into the world.
      *
      * <p>The object is not added immediately; it is queued and inserted at the start of
-     * {@link #update(double)} to avoid concurrent modification during iteration.
+     * {@link #update(double)} to avoid concurrent modification during iteration.</p>
      *
      * @param obj game object to add (enemy, bullet, item, etc.)
      */
@@ -176,67 +174,117 @@ public class GameWorld {
     /**
      * Attempts to spawn a random item at the given location when an enemy is defeated.
      *
-     * <p>Drop chance is controlled by {@link #ITEM_DROP_RATE_PERCENT} so gameplay balance
-     * can be tuned without touching core logic.</p>
-     *
-     * @param x spawn x position (typically enemy's x at death)
-     * @param y spawn y position (typically enemy's y at death)
+     * <p>Drop chance and item weights are configured in {@link GameConfig} so gameplay balance
+     * can be tuned without changing core game logic.</p>
      */
-    private static final int ITEM_DROP_RATE_PERCENT = 20;
-
     private void trySpawnItem(double x, double y) {
-        // Drop chance (percentage)
-        if (rng.nextInt(100) < ITEM_DROP_RATE_PERCENT) {
-            int itemType = rng.nextInt(5); // 0..4 choose one item type
-            switch (itemType) {
-                case 0 -> spawn(new ItemHeal(x, y, itemHealImg));
-                case 1 -> spawn(new ItemRampage(x, y, itemRampageImg));
-                case 2 -> spawn(new ItemSuper(x, y, itemSuperImg));
-                case 3 -> spawn(new ItemShotgun(x, y, itemShotgunImg));
-                case 4 -> spawn(new ItemShield(x, y, itemShieldImg));
-                default -> { /* no-op */ }
-            }
+        // Overall drop chance check (configured in GameConfig).
+        if (rng.nextInt(100) >= GameConfig.ITEM_DROP_RATE_PERCENT) {
+            return;
+        }
+
+        int totalWeight =
+                GameConfig.ITEM_HEAL_WEIGHT
+              + GameConfig.ITEM_RAMPAGE_WEIGHT
+              + GameConfig.ITEM_SUPER_WEIGHT
+              + GameConfig.ITEM_SHOTGUN_WEIGHT
+              + GameConfig.ITEM_SHIELD_WEIGHT;
+
+        int roll = rng.nextInt(totalWeight);
+
+        if (roll < GameConfig.ITEM_HEAL_WEIGHT) {
+            spawn(new ItemHeal(x, y, itemHealImg));
+
+        } else if (roll < GameConfig.ITEM_HEAL_WEIGHT + GameConfig.ITEM_RAMPAGE_WEIGHT) {
+            spawn(new ItemRampage(x, y, itemRampageImg));
+
+        } else if (roll < GameConfig.ITEM_HEAL_WEIGHT
+                         + GameConfig.ITEM_RAMPAGE_WEIGHT
+                         + GameConfig.ITEM_SUPER_WEIGHT) {
+            spawn(new ItemSuper(x, y, itemSuperImg));
+
+        } else if (roll < GameConfig.ITEM_HEAL_WEIGHT
+                         + GameConfig.ITEM_RAMPAGE_WEIGHT
+                         + GameConfig.ITEM_SUPER_WEIGHT
+                         + GameConfig.ITEM_SHOTGUN_WEIGHT) {
+            spawn(new ItemShotgun(x, y, itemShotgunImg));
+
+        } else {
+            spawn(new ItemShield(x, y, itemShieldImg));
         }
     }
 
-
     /**
-     * Spawns enemies based on a countdown timer.
+     * Spawns enemies using a countdown timer and a difficulty scaling model.
      *
-     * <p>Spawn behavior:
+     * <p>Difficulty design:
      * <ul>
-     *   <li>Timer is reduced by dt each frame.</li>
-     *   <li>When timer reaches 0, a new enemy is spawned above the screen and the timer is reset.</li>
-     *   <li>Enemy type is determined by a random roll (weighted probabilities).</li>
+     *   <li>Difficulty level increases with score (1 level per 500 points), capped at 25.</li>
+     *   <li>Higher difficulty reduces spawn interval (more enemies) down to a safe minimum.</li>
+     *   <li>Higher difficulty increases the chance of stronger enemy types (Fast/Boss).</li>
+     *   <li>Enemy speed and HP are scaled by difficulty (+10% per level).</li>
+     * </ul>
+     *
+     * <p>Enemy type meaning (must stay consistent with menus and sprites):
+     * <ul>
+     *   <li>Type 1: Normal</li>
+     *   <li>Type 2: Fast</li>
+     *   <li>Type 3: Boss</li>
      * </ul>
      *
      * @param dt delta time in seconds since last frame
      */
     private void spawnEnemies(double dt) {
+        // Countdown timer; when it reaches 0, spawn one enemy and reset.
         enemySpawnTimer -= dt;
         if (enemySpawnTimer > 0) return;
 
-        // Reset timer to a random interval (controls spawn rate)
-        enemySpawnTimer = 0.8 + rng.nextDouble() * 0.4;
+        // Difficulty level: level up every 500 points, capped to keep gameplay reasonable.
+        int difficultyLevel = score / 500;
+        if (difficultyLevel > 25) difficultyLevel = 25;
 
-        // Determine a safe spawn width; fallback if layout bounds are not ready yet
-        double width = getWorldWidth();
-        if (width < 100) width = 900;
+        // Spawn frequency scaling: base interval decreases with difficulty, clamped to a minimum.
+        double baseInterval = 0.8 - (difficultyLevel * 0.04);
+        if (baseInterval < 0.2) baseInterval = 0.2;
 
-        // Spawn just above the visible area so enemies enter from the top
-        double x = rng.nextDouble() * (width - 40);
-        double y = -60;
+        // Add jitter so spawns are not perfectly periodic.
+        enemySpawnTimer = baseInterval + rng.nextDouble() * 0.3;
 
-        // Weighted enemy selection
-        int roll = rng.nextInt(100);
-        GameObject enemy;
-        if (roll < 70) {
-            enemy = new EnemyType1(x, y, enemySprite1);
-        } else if (roll < 95) {
+        // Fallback if layout bounds are not ready yet.
+        double width = playfield.getWidth();
+        if (width <= 0) width = GameConfig.WIDTH;
+
+        // Spawn just above the visible area so enemies enter from the top.
+        double margin = GameConfig.ENEMY_SPAWN_MARGIN_X;
+        double minX = margin;
+        double maxX = Math.max(minX, width - margin);
+        double x = minX + rng.nextDouble() * (maxX - minX);
+        double y = GameConfig.ENEMY_SPAWN_Y;
+
+        // Type probabilities (0..99):
+        // Base chances: Boss 10%, Fast 25%. Each difficulty level adds +1% to each.
+        int bossChance = 10 + difficultyLevel; // Type 3 (Boss)
+        int fastChance = 25 + difficultyLevel; // Type 2 (Fast)
+
+        int roll = rng.nextInt(100); // 0..99
+        Enemy enemy;
+
+        if (roll < bossChance) {
+            // Type 3: Boss
             enemy = new EnemyType3(x, y, enemySprite3);
-        } else {
+        } else if (roll < bossChance + fastChance) {
+            // Type 2: Fast
             enemy = new EnemyType2(x, y, enemySprite2);
+        } else {
+            // Type 1: Normal
+            enemy = new EnemyType1(x, y, enemySprite1);
         }
+
+        // Scale enemy stats by difficulty (+10% per level).
+        // Note: Enemy must provide multiplySpeed(double) and buffHp(double).
+        double multiplier = 1.0 + (difficultyLevel * 0.1);
+        enemy.multiplySpeed(multiplier);
+        enemy.buffHp(multiplier);
 
         spawn(enemy);
     }
@@ -261,7 +309,7 @@ public class GameWorld {
      * Collision resolution step.
      *
      * <p>This method groups objects by type first (bullets/enemies/powerups/player)
-     * to reduce unnecessary pair checks compared to checking every object with every other object.
+     * to reduce unnecessary pair checks compared to checking every object with every other object.</p>
      *
      * <p>Rules implemented:
      * <ul>
@@ -280,11 +328,27 @@ public class GameWorld {
         for (GameObject o : objects) {
             if (!o.isAlive()) continue;
             switch (o.getType()) {
-                case BULLET_PLAYER: bullets.add(o); break;
-                case ENEMY:         enemies.add(o); break;
-                case POWERUP:       powerups.add(o); break;
-                case PLAYER:        if (o instanceof Player p) player = p; break;
-                default: break;
+                case BULLET_PLAYER:
+                    bullets.add(o);
+                    break;
+
+                case ENEMY:
+                    enemies.add(o);
+                    break;
+
+                case POWERUP:
+                    powerups.add(o);
+                    break;
+
+                case PLAYER:
+                    if (o instanceof Player p) {
+                        player = p;
+                    }
+                    break;
+
+                case EFFECT:
+                    // Visual/status effects do not participate in collision handling.
+                    break;
             }
         }
 
@@ -297,7 +361,7 @@ public class GameWorld {
                 if (Collision.aabb(bullet, enemyObj)) {
                     handleBulletHitEnemy((Bullet) bullet, (Enemy) enemyObj);
 
-                    // Once the bullet is consumed, stop checking it against other enemies
+                    // Once the bullet is consumed, stop checking it against other enemies.
                     if (!bullet.isAlive()) break;
                 }
             }
@@ -312,7 +376,7 @@ public class GameWorld {
                     player.damage();
                     enemyObj.kill();
                     SoundManager.playExplosion();
-                    // Explosion visual removed because Explosion class is not used in this codebase
+                    // Destruction feedback is provided via sound; this project keeps effects lightweight.
                 }
             }
         }
@@ -323,10 +387,10 @@ public class GameWorld {
                 if (!pu.isAlive()) continue;
 
                 if (Collision.aabb(player, pu)) {
-                    // Apply the power-up effect to the player
+                    // Apply the power-up effect to the player.
                     if (pu instanceof Item it) {
                         it.apply(player);
-                        // Optional: SoundManager.playItemGet();
+                        SoundManager.playItemGet();
                         pu.kill();
                     }
                 }
@@ -344,32 +408,20 @@ public class GameWorld {
      *   <li>If enemy dies, score is awarded and an item may drop.</li>
      * </ul>
      *
-     * @param b the bullet that hit the enemy
-     * @param e the enemy being hit
+     * @param bullet the bullet that hit the enemy
+     * @param enemy  the enemy being hit
      */
     private void handleBulletHitEnemy(Bullet bullet, Enemy enemy) {
         enemy.damage(bullet.getDamage());
         bullet.kill();
 
         if (!enemy.isAlive()) {
-            addScore(scoreForEnemy(enemy));
+            addScore(enemy.scoreValue());
             SoundManager.playExplosion();
 
-            // Item drop at enemy death position
+            // Item drop at enemy death position.
             trySpawnItem(enemy.getX(), enemy.getY());
         }
-    }
-
-    /**
-     * Calculates score reward based on enemy subtype.
-     *
-     * @param e enemy instance
-     * @return points to award when the enemy is destroyed
-     */
-    private int scoreForEnemy(Enemy e) {
-        if (e instanceof EnemyType2) return 1000;
-        if (e instanceof EnemyType3) return 150;
-        return 100;
     }
 
     /**

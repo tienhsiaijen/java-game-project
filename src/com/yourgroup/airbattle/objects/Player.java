@@ -53,7 +53,7 @@ public class Player extends GameObject {
     private double shieldTimer = 0;
 
     /** Whether auto-fire (rampage) mode is active. */
-    private boolean isAutoFire = false;
+    private boolean isRapidFire = false;
     private double autoFireTimer = 0;
 
     /** Whether super bullets (higher damage/size) are active. */
@@ -158,9 +158,9 @@ public class Player extends GameObject {
         }
 
         // Expire auto-fire
-        if (isAutoFire) {
+        if (isRapidFire) {
             autoFireTimer -= dt;
-            if (autoFireTimer <= 0) isAutoFire = false;
+            if (autoFireTimer <= 0) isRapidFire = false;
         }
 
         // Expire super bullet
@@ -204,7 +204,7 @@ public class Player extends GameObject {
      */
     private void fireWeapon() {
         // 1) Determine effective fire rate.
-        double actualCooldown = isAutoFire ? 0.1 : 0.25;
+        double actualCooldown = isRapidFire ? 0.1 : 0.25;
 
         // If a simple fire-boost is active, choose the faster cooldown.
         if (fireBoostTimer > 0) actualCooldown = Math.min(actualCooldown, fireCooldown);
@@ -216,7 +216,7 @@ public class Player extends GameObject {
 
         // 3) Determine bullet attributes (Super Bullet vs Normal).
         // Auto-fire also uses the super bullet sprite for clearer feedback.
-        boolean useSuper = isSuperBullet || isAutoFire;
+        boolean useSuper = isSuperBullet || isRapidFire;
 
         int damage = useSuper ? 5 : 1;
         double bulletWidth = useSuper ? 20 : 6;
@@ -307,12 +307,12 @@ public class Player extends GameObject {
     }
 
     /**
-     * Activates rampage mode (automatic rapid fire).
+     * Activates rampage mode (rapid fire).
      *
      * @param duration duration in seconds
      */
     public void activateAutoFire(double duration) {
-        isAutoFire = true;
+    	isRapidFire = true;
         autoFireTimer = duration;
     }
 

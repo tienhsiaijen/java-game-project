@@ -57,7 +57,7 @@ public class ShieldEffect extends GameObject {
      */
     @Override
     public ObjectType getType() {
-        return ObjectType.POWERUP;
+        return ObjectType.EFFECT;
     }
 
     /**

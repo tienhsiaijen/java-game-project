@@ -38,6 +38,9 @@ public final class SoundManager {
 
     /** Currently playing background music (used for mutual exclusion). */
     private static AudioClip currentBgm;
+    
+    /** Sound effect played when getting an Item. */
+    private static AudioClip itemGetSound;
 
     /**
      * Static initialization block that preloads all audio resources.
@@ -137,4 +140,12 @@ public final class SoundManager {
             explodeSound.play(1.0);
         }
     }
-}
+        
+    /** Plays the item pickup sound effect. */
+    public static void playItemGet() {
+        if (itemGetSound != null) {
+            itemGetSound.play(1.0);
+            }
+        }
+    }
+

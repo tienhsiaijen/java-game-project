@@ -49,7 +49,7 @@ public class PauseMenu extends VBox {
         setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
 
         // Title indicating the paused state.
-        Label title = new Label("GAME PAUSED");
+        Label title = new Label("GAME PAUSED\nPress [P] to toggle fullscreen");
         title.setTextFill(Color.WHITE);
         title.setFont(Font.font("Arial", FontWeight.BOLD, 48));
 

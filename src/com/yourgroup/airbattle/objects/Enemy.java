@@ -114,4 +114,33 @@ public class Enemy extends GameObject {
     public int getHp() {
         return hp;
     }
+    /**
+     * Score awarded when this enemy is destroyed.
+     * Subclasses override to provide different score values.
+     *
+     * @return score points for killing this enemy
+     */
+    public int scoreValue() {
+        return 100; // default for basic enemies
+    }
+    
+    /**
+     * Multiplies the enemy's movement speed by a factor.
+     *
+     * @param factor multiplier (e.g., 1.2 means +20%)
+     */
+    public void multiplySpeed(double factor) {
+        this.speed *= factor;
+    }
+
+    /**
+     * Buffs enemy HP by a factor.
+     *
+     * <p>HP is kept at least its original integer value.</p>
+     *
+     * @param factor multiplier (e.g., 1.5 means +50%)
+     */
+    public void buffHp(double factor) {
+        this.hp = (int) Math.max(this.hp, this.hp * factor);
+    }
 }

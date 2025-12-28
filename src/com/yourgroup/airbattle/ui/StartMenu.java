@@ -50,16 +50,18 @@ public class StartMenu extends VBox {
         // Gameplay tips and enemy descriptions shown before the game starts.
         // Keep descriptions generic to avoid drifting from actual implementation details.
         Label tips = new Label(
-            "ENEMY GUIDE:\n" +
-            "• Type 1 (Normal): standard enemy with basic movement.\n" +
-            "• Type 3 (Fast): fast enemy that is harder to track.\n" +
-            "• Type 2 (Boss): larger enemy with higher health.\n\n" +
-            "Controls: Arrow keys / WASD to move, SPACE to fire." +
-            "Goal: Survive as long as possible and get a higher score." +
-            "Scoring: Destroy enemies to gain score." +
-            "Game Over: When HP reaches 0." +
-            "Pause: Press ESC to pause/resume." 
-        );
+        	    "ENEMY GUIDE:\n" +
+        	    "• Type 1 (Normal): standard enemy with basic movement.\n" +
+        	    "• Type 2 (Fast): fast enemy that is harder to track.\n" +
+        	    "• Type 3 (Boss): larger enemy with higher health.\n\n" +
+        	    "Power UP Guide:\n" +
+        	    "Heal Pill: A green pill icon, increases 1 HP.\n" +
+        	    "Super Bullet: A green star icon, makes bullets bigger and more harmful.\n" +
+        	    "Rampage: A blue-white star icon, makes bullets go ballistic.\n" +
+        	    "Shotgun: Two green bullets icon, makes each shot have 3 bullets.\n" +
+        	    "Body Strengthening: A blue-white flash icon, increases speed and grants a shield.\n\n" +
+        	    "Controls: Arrow keys / WASD to move, SPACE to fire."
+        	);
         tips.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
         tips.setMaxWidth(520);
         tips.setWrapText(true);

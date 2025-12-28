@@ -3,10 +3,18 @@ package com.yourgroup.airbattle.objects;
 import javafx.scene.image.Image;
 
 /**
- * Rampage item that enables temporary automatic firing.
+ * Grants the player a temporary rapid-fire buff.
+ *
+ * <p>This buff reduces the weapon cooldown so the player can shoot more frequently.
+ * The player still needs to press the fire key; the item does not enable automatic
+ * shooting by itself.</p>
+ */
+
+/**
+ * Rampage item that enables temporary rapid firing.
  *
  * <p>{@code ItemRampage} grants the player a short burst of increased
- * offensive capability by enabling automatic firing for a limited
+ * offensive capability by enabling rapid firing for a limited
  * duration. This item is designed to help the player handle
  * high-pressure situations with many enemies on screen.</p>
  *
@@ -35,7 +43,7 @@ public class ItemRampage extends Item {
     /**
      * Applies the rampage effect to the player.
      *
-     * <p>When collected, the player enters an auto-fire state for
+     * <p>When collected, the player enters an rapid-fire state for
      * a fixed duration. During this period, bullets are fired
      * automatically without requiring manual input.</p>
      *
@@ -43,7 +51,7 @@ public class ItemRampage extends Item {
      */
     @Override
     public void apply(Player player) {
-        // Enable automatic firing for 10 seconds
+        // Enable rapid firing for 10 seconds
         player.activateAutoFire(10.0);
     }
 }

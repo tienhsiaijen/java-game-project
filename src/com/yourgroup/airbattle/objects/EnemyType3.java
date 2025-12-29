@@ -7,7 +7,7 @@ import com.yourgroup.airbattle.core.GameConfig;
 /**
  * Boss-type enemy with large size, high health, and horizontal patrol behavior.
  *
- * <p>{@code EnemyType2} represents a high-difficulty enemy designed to
+ * <p>{@code EnemyType3} represents a high-difficulty enemy designed to
  * challenge the player through increased durability and screen-wide movement.
  * Unlike basic enemies, it occupies more space and requires multiple hits
  * to defeat.</p>

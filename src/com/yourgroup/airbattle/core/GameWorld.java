@@ -61,12 +61,13 @@ public class GameWorld {
     // --- Shared sprites (loaded once) ---
     /** Sprite used by player bullets. */
     private final Image bulletSprite = com.yourgroup.airbattle.util.Assets.image("/img/Bullet.png");
-    /** Default enemy sprite (type 1). */
-    private final Image enemySprite1 = com.yourgroup.airbattle.util.Assets.image("/img/enemy.png");
-    /** Enemy sprite (type 2: fast). */
-    private final Image enemySprite2 = com.yourgroup.airbattle.util.Assets.image("/img/enemy2.png");
-    /** Enemy sprite (type 3: boss). */
-    private final Image enemySprite3 = com.yourgroup.airbattle.util.Assets.image("/img/enemy3(Boss).png");
+    /** Enemy sprite (Type 1: normal). */
+    private final Image enemyType1Sprite = com.yourgroup.airbattle.util.Assets.image("/img/enemy.png");
+    /** Enemy sprite (Fast). */
+    private final Image enemyFastSprite  = com.yourgroup.airbattle.util.Assets.image("/img/enemyFast.png");
+    /** Enemy sprite (Boss). */
+    private final Image enemyBossSprite  = com.yourgroup.airbattle.util.Assets.image("/img/enemyBoss.png");
+
 
     // --- Power-up item sprites (match exact filenames) ---
     private final Image itemHealImg    = com.yourgroup.airbattle.util.Assets.image("/img/item_heal.png");
@@ -261,24 +262,26 @@ public class GameWorld {
         double x = minX + rng.nextDouble() * (maxX - minX);
         double y = GameConfig.ENEMY_SPAWN_Y;
 
-        // Type probabilities (0..99):
-        // Base chances: Boss 10%, Fast 25%. Each difficulty level adds +1% to each.
-        int bossChance = 10 + difficultyLevel; // Type 3 (Boss)
-        int fastChance = 25 + difficultyLevel; // Type 2 (Fast)
+     // Type probabilities (0..99):
+     // Base chances: Boss 10%, Fast 25%. Each difficulty level adds +1% to each.
+     int bossChance = 10 + difficultyLevel; // Type 3 (Boss)
+     int fastChance = 25 + difficultyLevel; // Type 2 (Fast)
 
-        int roll = rng.nextInt(100); // 0..99
-        Enemy enemy;
+     int roll = rng.nextInt(100); // 0..99
+     Enemy enemy;
 
-        if (roll < bossChance) {
-            // Type 3: Boss
-            enemy = new EnemyType3(x, y, enemySprite3);
-        } else if (roll < bossChance + fastChance) {
-            // Type 2: Fast
-            enemy = new EnemyType2(x, y, enemySprite2);
-        } else {
-            // Type 1: Normal
-            enemy = new EnemyType1(x, y, enemySprite1);
-        }
+     if (roll < bossChance) {
+         // Boss -> EnemyType3
+         enemy = new EnemyType3(x, y, enemyBossSprite);
+
+     } else if (roll < bossChance + fastChance) {
+         // Fast -> EnemyType2
+         enemy = new EnemyType2(x, y, enemyFastSprite);
+
+     } else {
+         // Normal -> EnemyType1
+         enemy = new EnemyType1(x, y, enemyType1Sprite);
+     }
 
         // Scale enemy stats by difficulty (+10% per level).
         // Note: Enemy must provide multiplySpeed(double) and buffHp(double).

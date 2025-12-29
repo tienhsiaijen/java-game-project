@@ -6,7 +6,7 @@ import com.yourgroup.airbattle.core.GameConfig;
 /**
  * Fast-moving enemy type with low health.
  *
- * <p>{@code EnemyType3} is designed to pressure the player through
+ * <p>{@code EnemyType2} is designed to pressure the player through
  * high movement speed rather than durability. It moves quickly both
  * vertically and horizontally, making it harder to track and hit,
  * despite having only a single health point.</p>

@@ -52,8 +52,9 @@ public class StartMenu extends VBox {
         Label tips = new Label(
         	    "ENEMY GUIDE:\n" +
         	    "• Type 1 (Normal): standard enemy with basic movement.\n" +
-        	    "• Type 2 (Fast): fast enemy that is harder to track.\n" +
-        	    "• Type 3 (Boss): larger enemy with higher health.\n\n" +
+        	    "• Type 2 (Boss): larger enemy with higher health.\n" +
+        	    "• Type 3 (Fast): fast enemy that is harder to track.\n" +
+        	    "Objective: Survive as long as possible and achieve the highest score." +
         	    "Power UP Guide:\n" +
         	    "Heal Pill: A green pill icon, increases 1 HP.\n" +
         	    "Super Bullet: A green star icon, makes bullets bigger and more harmful.\n" +
